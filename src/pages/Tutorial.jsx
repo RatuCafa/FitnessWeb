@@ -1,17 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // 1. Tambahkan useEffect di sini
 import { Search } from 'lucide-react';
 import TutorialCard from '../components/TutorialCard';
-import { movementData } from '../data/movements';
-
+// import { movementData } from '../data/movements'; // 2. Kita matikan data statis ini karena mau pakai DB
 
 const Tutorial = () => {
+  const [movements, setMovements] = useState([]); // 3. State penampung data dari database
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true); // 4. State loading biar UX lebih halus
 
-  const filteredMovements = movementData.filter((item) => {
+  // 5. Ambil data dari Backend saat halaman pertama kali di-load
+  useEffect(() => {
+    fetch('http://localhost:5000/api/gerakan')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Gagal mengambil data dari server');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setMovements(data); // Simpan hasil query SELECT * FROM gerakan ke state
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error BE-FE connection:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // 6. Logika filter disesuaikan dengan nama kolom database kamu (nama_gerakan & target_otot)
+  const filteredMovements = movements.filter((item) => {
     const term = searchTerm.toLowerCase();
     return (
-      item.title.toLowerCase().includes(term) ||
-      item.muscles.toLowerCase().includes(term)
+      item.nama_gerakan.toLowerCase().includes(term) ||
+      item.target_otot.toLowerCase().includes(term)
     );
   });
 
@@ -34,23 +55,32 @@ const Tutorial = () => {
         </div>
       </div>
 
-      {/* Grid of Tutorial Cards */}
-      {filteredMovements.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {filteredMovements.map((item) => (
-            <TutorialCard
-              key={item.id}
-              id={item.id}
-              title={item.title}
-              muscles={item.muscles}
-              imageSrc={item.imageSrc}
-            />
-          ))}
+      {/* 7. Tampilkan status Loading jika data masih dijepret dari API */}
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-zinc-500 text-lg animate-pulse">Menghubungkan ke database...</p>
         </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-zinc-400 text-lg">Tidak ada gerakan yang sesuai dengan pencarian Anda.</p>
-        </div>
+        <>
+          {/* Grid of Tutorial Cards */}
+          {filteredMovements.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {filteredMovements.map((item) => (
+                <TutorialCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.nama_gerakan}  
+                  muscles={item.target_otot} 
+                  imageSrc={item.thumbnail}   
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-zinc-400 text-lg">Tidak ada gerakan yang sesuai dengan pencarian Anda.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

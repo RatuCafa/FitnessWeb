@@ -1,12 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+// PASTIKAN PLAYCIRCLE ADA DI SINI
 import { ArrowLeft, PlayCircle, AlertTriangle, Lightbulb, Check } from 'lucide-react';
-import { movementData } from '../data/movements';
-
 
 const MovementDetail = () => {
-  const { id } = useParams();
-  const movement = movementData.find((item) => item.id === parseInt(id));
+  const { id } = useParams(); 
+  const [movement, setMovement] = useState(null); 
+  const [loading, setLoading] = useState(true);
+  // STATE BARU UNTUK PLAY VIDEO
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/gerakan/${id}`) 
+      .then((res) => {
+        if (!res.ok) throw new Error('Gerakan tidak ditemukan');
+        return res.json();
+      })
+      .then((data) => {
+        const formattedData = {
+          ...data,
+          kesalahan: data.kesalahan ? data.kesalahan.split(',').map(item => item.trim()) : [],
+          tips: data.tips ? data.tips.split(',').map(item => item.trim()) : []
+        };
+        setMovement(formattedData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Gagal mengambil detail gerakan:", err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-slate-900">
+        <p className="text-lg animate-pulse">Memuat detail gerakan...</p>
+      </div>
+    );
+  }
 
   if (!movement) {
     return (
@@ -30,25 +61,44 @@ const MovementDetail = () => {
       <div>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 uppercase tracking-wide text-slate-900">{movement.title}</h1>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 uppercase tracking-wide text-slate-900">
+            {movement.nama_gerakan}
+          </h1>
           <span className="bg-red-600 text-white text-sm font-bold tracking-widest px-4 py-2 rounded-full uppercase shadow-md">
-            {movement.muscles}
+            {movement.target_otot}
           </span>
         </div>
 
-        {/* Video Placeholder */}
-        <div className="relative aspect-[16/9] rounded-2xl md:rounded-3xl overflow-hidden mb-8 md:mb-12 shadow-2xl group cursor-pointer">
-          <img 
-            src={movement.imageSrc} 
-            alt={`${movement.title} Video`} 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-            <PlayCircle className="w-14 h-14 md:w-24 md:h-24 text-white opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 drop-shadow-xl" strokeWidth={1.5} />
-          </div>
-          <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-sm text-zinc-900 text-sm font-bold px-4 py-2 rounded-lg tracking-wider shadow-lg">
-            VIDEO LOOP TEKNIK
-          </div>
+        {/* Video / Thumbnail Section */}
+        <div className="relative aspect-[16/9] rounded-2xl md:rounded-3xl overflow-hidden mb-8 md:mb-12 shadow-2xl group bg-black">
+          {!isPlaying ? (
+            <div className="w-full h-full relative cursor-pointer" onClick={() => setIsPlaying(true)}>
+              <img 
+                src={movement.thumbnail} 
+                alt={`${movement.nama_gerakan} Thumbnail`} 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200';
+                }}
+              />
+              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
+                <PlayCircle className="w-14 h-14 md:w-24 md:h-24 text-white opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 drop-shadow-xl" strokeWidth={1.5} />
+              </div>
+              <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-sm text-zinc-900 text-sm font-bold px-4 py-2 rounded-lg tracking-wider shadow-lg">
+                VIDEO LOOP TEKNIK
+              </div>
+            </div>
+          ) : (
+            <iframe
+              className="w-full h-full"
+              src={`${movement.video_url}?autoplay=1`}
+              title={movement.nama_gerakan}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+          )}
         </div>
 
         {/* Info Cards */}
