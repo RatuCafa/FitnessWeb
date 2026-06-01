@@ -108,6 +108,58 @@ app.post('/api/programs', (req, res) => {
     });
 });
 
+// Endpoint untuk mendaftarkan gerakan ke dalam program latihan
+app.post('/api/detail-program', (req, res) => {
+  const { program_id, gerakan_id } = req.body;
+  const sql = "INSERT INTO detail_program (program_id, gerakan_id) VALUES (?, ?)";
+  
+  db.query(sql, [program_id, gerakan_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({ message: "Gerakan berhasil didaftarkan ke dalam program!" });
+  });
+});
+
+app.get('/api/programs/:id/gerakan', (req, res) => {
+  const programId = req.params.id;
+
+  const sql = `
+    SELECT p.nama_program, p.durasi_total, p.jumlah_gerakan,
+           g.id AS gerakan_id, g.nama_gerakan, g.thumbnail
+    FROM program_workout p
+    JOIN detail_program dp ON p.id = dp.program_id
+    JOIN gerakan g ON dp.gerakan_id = g.id
+    WHERE p.id = ?
+  `;
+
+  db.query(sql, [programId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    // JIKA PROGRAM BELUM MEMILIKI GERAKAN DI DATABASE
+    if (results.length === 0) {
+      return res.json({
+        nama_program: "Program Latihan",
+        durasi_total: 0,
+        jumlah_gerakan: 0,
+        daftar_latihan: [] // Tetap kirim array kosong agar frontend tidak crash!
+      });
+    }
+
+    // FORMAT RESPON JSON YANG BENAR UNTUK FRONTEND
+    const programInfo = {
+      nama_program: results[0].nama_program,
+      durasi_total: results[0].durasi_total,
+      jumlah_gerakan: results[0].jumlah_gerakan,
+      daftar_latihan: results.map(row => ({
+        id: row.gerakan_id,
+        nama_gerakan: row.nama_gerakan,
+        thumbnail: row.thumbnail
+      }))
+    };
+
+    res.json(programInfo);
+  });
+});
+
 // Jalankan Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
