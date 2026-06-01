@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; // Gunakan useLocation untuk menangkap operan data
 import { Play, Pause, ChevronRight, Zap } from 'lucide-react';
-import { workoutPrograms } from '../data/workouts';
 
 const ActiveWorkout = () => {
-  const { goalId } = useParams();
-  const program = workoutPrograms[goalId];
+  const location = useLocation();
+  // Menangkap array daftar gerakan dan nama program yang dioper dari halaman pratinjau sebelumnya
+  const { latihanList, programName } = location.state || { latihanList: [], programName: "Workout" };
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(program ? program.exercises[0].time : 0);
+  // Timer default diatur ke 45 detik (atau bisa kamu sesuaikan jika ada kolom durasi di DB)
+  const [timeLeft, setTimeLeft] = useState(45); 
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
   const handleNext = () => {
-    if (!program) return;
-    if (currentIndex < program.exercises.length - 1) {
+    if (latihanList.length === 0) return;
+    if (currentIndex < latihanList.length - 1) {
       setCurrentIndex(prev => prev + 1);
-      setTimeLeft(program.exercises[currentIndex + 1].time);
+      setTimeLeft(45); // Reset waktu kembali ke 45 detik untuk gerakan selanjutnya
     } else {
       setIsFinished(true);
       setIsRunning(false);
@@ -37,7 +38,7 @@ const ActiveWorkout = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeLeft, currentIndex, program]);
+  }, [isRunning, timeLeft, currentIndex, latihanList]);
 
   const toggleTimer = () => {
     setIsRunning(!isRunning);
@@ -51,7 +52,8 @@ const ActiveWorkout = () => {
     return `${paddedMinutes}:${paddedSeconds}`;
   };
 
-  if (!program) {
+  // Jika user langsung tembak URL tanpa lewat halaman pratinjau (data kosong)
+  if (latihanList.length === 0) {
     return (
       <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
         <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Program tidak ditemukan</h1>
@@ -73,7 +75,7 @@ const ActiveWorkout = () => {
         </div>
         <h1 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Workout Selesai!</h1>
         <p className="text-center text-slate-600 max-w-md mx-auto mb-10 font-medium leading-relaxed">
-          Luar biasa! Kamu telah menyelesaikan program <span className="font-bold text-slate-900">{program.title}</span>. Jangan lupa isi jadwalmu dan cek kemajuan minggu ini.
+          Luar biasa! Kamu telah menyelesaikan program <span className="font-bold text-slate-900">{programName}</span>. Jangan lupa isi jadwalmu dan cek kemajuan minggu ini.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link 
@@ -95,18 +97,18 @@ const ActiveWorkout = () => {
     );
   }
 
-  const currentExercise = program.exercises[currentIndex];
+  // Mengambil data gerakan aktif berdasarkan index array dinamis database
+  const currentExercise = latihanList[currentIndex];
 
   return (
     <div className="w-full min-h-full bg-transparent pt-8 flex flex-col">
-      
       <div className="w-full mt-4">
         
         {/* Header Pill */}
         <div className="bg-[#1A2E35] text-white px-6 py-4 rounded-full flex justify-between items-center max-w-3xl mx-auto mb-8 shadow-md">
-          <span className="font-bold text-sm tracking-wide">{program.title}</span>
+          <span className="font-bold text-sm tracking-wide">{programName}</span>
           <div className="bg-white text-red-600 font-bold text-xs tracking-widest px-3 py-1.5 rounded-full">
-            {currentIndex + 1} / {program.exercises.length}
+            {currentIndex + 1} / {latihanList.length}
           </div>
         </div>
 
@@ -116,13 +118,15 @@ const ActiveWorkout = () => {
           {/* Image Area */}
           <div className="relative h-56 md:h-80 w-full">
             <img 
-              src={currentExercise.img} 
-              alt={currentExercise.name} 
+              src={currentExercise.thumbnail} // Disesuaikan nama kolom MySQL ('thumbnail')
+              alt={currentExercise.nama_gerakan} // Disesuaikan nama kolom MySQL ('nama_gerakan')
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E35] via-[#1A2E35]/40 to-transparent flex flex-col justify-end p-8 pb-2">
-              <h2 className="text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-2xl md:text-4xl lg:text-5xl font-black mb-2 tracking-tight">{currentExercise.name}</h2>
-              <p className="text-red-400 font-medium text-base md:text-lg">{currentExercise.detail}</p>
+              <h2 className="text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-2xl md:text-4xl lg:text-5xl font-black mb-2 tracking-tight">
+                {currentExercise.nama_gerakan}
+              </h2>
+              <p className="text-red-400 font-medium text-base md:text-lg">45 Detik Latihan</p>
             </div>
           </div>
 
