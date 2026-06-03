@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom'; // Gunakan useLocation untuk menangkap operan data
+import { Link, useLocation } from 'react-router-dom';
 import { Play, Pause, ChevronRight, Zap } from 'lucide-react';
 
 const ActiveWorkout = () => {
   const location = useLocation();
-  // Menangkap array daftar gerakan dan nama program yang dioper dari halaman pratinjau sebelumnya
+  // Menangkap array bungkusan list gerakan dinamis dari DB
   const { latihanList, programName } = location.state || { latihanList: [], programName: "Workout" };
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Timer default diatur ke 45 detik (atau bisa kamu sesuaikan jika ada kolom durasi di DB)
-  const [timeLeft, setTimeLeft] = useState(45); 
+  const [timeLeft, setTimeLeft] = useState(45); // Durasi per gerakan default 45 detik
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
+  // Fungsi menggeser ke urutan gerakan berikutnya
   const handleNext = () => {
     if (latihanList.length === 0) return;
     if (currentIndex < latihanList.length - 1) {
       setCurrentIndex(prev => prev + 1);
-      setTimeLeft(45); // Reset waktu kembali ke 45 detik untuk gerakan selanjutnya
+      setTimeLeft(45); // Reset ulang waktu ke 45 detik untuk gerakan selanjutnya
     } else {
       setIsFinished(true);
       setIsRunning(false);
     }
   };
 
+  // Efek Mesin Hitung Mundur Waktu (Timer)
   useEffect(() => {
     let interval = null;
     
@@ -52,11 +53,12 @@ const ActiveWorkout = () => {
     return `${paddedMinutes}:${paddedSeconds}`;
   };
 
-  // Jika user langsung tembak URL tanpa lewat halaman pratinjau (data kosong)
+  // Antrean Pengaman jika data dari DB kosong melompong agar tidak Blank Putih
   if (latihanList.length === 0) {
     return (
       <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
-        <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Program tidak ditemukan</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Program latihan kosong</h1>
+        <p className="text-slate-600 mb-6">Silakan masuk melalui menu pilihan Workout di halaman utama.</p>
         <Link to="/workout" className="text-red-600 font-bold hover:underline">Kembali ke Workout</Link>
       </div>
     );
@@ -67,6 +69,7 @@ const ActiveWorkout = () => {
     localStorage.setItem('completedWorkouts', current + 1);
   };
 
+  // Tampilan Screen Sukses Latihan (Finished State)
   if (isFinished) {
     return (
       <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
@@ -97,14 +100,14 @@ const ActiveWorkout = () => {
     );
   }
 
-  // Mengambil data gerakan aktif berdasarkan index array dinamis database
+  // Mengambil item data gerakan aktif berdasarkan urutan index array DB saat ini
   const currentExercise = latihanList[currentIndex];
 
   return (
     <div className="w-full min-h-full bg-transparent pt-8 flex flex-col">
       <div className="w-full mt-4">
         
-        {/* Header Pill */}
+        {/* Header Pill Progress */}
         <div className="bg-[#1A2E35] text-white px-6 py-4 rounded-full flex justify-between items-center max-w-3xl mx-auto mb-8 shadow-md">
           <span className="font-bold text-sm tracking-wide">{programName}</span>
           <div className="bg-white text-red-600 font-bold text-xs tracking-widest px-3 py-1.5 rounded-full">
@@ -112,21 +115,25 @@ const ActiveWorkout = () => {
           </div>
         </div>
 
-        {/* Main Card */}
+        {/* Main Card Timer */}
         <div className="bg-[#1A2E35] rounded-[2rem] overflow-hidden max-w-3xl mx-auto shadow-2xl">
           
-          {/* Image Area */}
-          <div className="relative h-56 md:h-80 w-full">
+          {/* Image Area Menampilkan link foto dari MySQL */}
+          <div className="relative h-56 md:h-80 w-full bg-black">
             <img 
-              src={currentExercise.thumbnail} // Disesuaikan nama kolom MySQL ('thumbnail')
-              alt={currentExercise.nama_gerakan} // Disesuaikan nama kolom MySQL ('nama_gerakan')
-              className="w-full h-full object-cover"
+              src={currentExercise.thumbnail} 
+              alt={currentExercise.nama_gerakan} 
+              className="w-full h-full object-cover opacity-90"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600';
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E35] via-[#1A2E35]/40 to-transparent flex flex-col justify-end p-8 pb-2">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E35] via-[#1A2E35]/30 to-transparent flex flex-col justify-end p-8 pb-2">
               <h2 className="text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-2xl md:text-4xl lg:text-5xl font-black mb-2 tracking-tight">
                 {currentExercise.nama_gerakan}
               </h2>
-              <p className="text-red-400 font-medium text-base md:text-lg">45 Detik Latihan</p>
+              <p className="text-red-400 font-bold text-base md:text-lg">Target: 45 Detik</p>
             </div>
           </div>
 
@@ -139,7 +146,7 @@ const ActiveWorkout = () => {
             <div className="flex items-center gap-3 md:gap-4 mt-5 md:mt-8 px-2 md:px-4">
               <button 
                 onClick={toggleTimer}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-base md:text-lg py-3 md:py-4 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 tracking-wider"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-base md:text-lg py-3 md:py-4 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 tracking-wider active:scale-98"
               >
                 {isRunning ? (
                   <>
@@ -156,7 +163,7 @@ const ActiveWorkout = () => {
               
               <button 
                 onClick={handleNext}
-                className="w-12 h-12 md:w-16 md:h-16 bg-white text-zinc-900 rounded-full shadow-lg hover:bg-zinc-100 transition-colors flex items-center justify-center shrink-0"
+                className="w-12 h-12 md:w-16 md:h-16 bg-white text-zinc-900 rounded-full shadow-lg hover:bg-zinc-100 transition-colors flex items-center justify-center shrink-0 active:scale-95"
               >
                 <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-zinc-600" strokeWidth={2.5} />
               </button>

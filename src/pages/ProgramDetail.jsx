@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom'; // Mengganti useParams menjadi useLocation
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Play } from 'lucide-react';
 
 const ProgramDetail = () => {
   const location = useLocation();
-  // Mengambil programId yang di-oper dari halaman target utama sebelumnya
-  // Jika tidak ada (misal di-refresh), default ke ID 3 (Muscle Gain) sebagai cadangan
-  const { programId } = location.state || { programId: 3 }; 
+  const { goalId } = useParams(); // Mengambil slug URL bawaan temanmu (misal: 'muscle-gain')
+
+  // LOGIKA DETEKSI ID: Ambil dari state, jika kosong konversi dari slug URL params
+  let programId = location.state?.programId;
+  if (!programId) {
+    if (goalId === 'fat-loss' || goalId === '1') programId = 1;
+    else if (goalId === 'general-health' || goalId === '2') programId = 2;
+    else programId = 3; // Default ke Muscle Gain (ID: 3)
+  }
 
   const [programData, setProgramData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Ambil daftar gerakan berdasarkan ID program dari Backend kamu
+  // Mengambil daftar gerakan berdasarkan ID program dari Backend
   useEffect(() => {
     fetch(`http://localhost:5000/api/programs/${programId}/gerakan`)
       .then((res) => {
-        if (!res.ok) throw new Error('Program tidak ditemukan atau belum memiliki gerakan');
+        if (!res.ok) throw new Error('Program tidak ditemukan atau detail_program di DB masih kosong');
         return res.json();
       })
       .then((data) => {
@@ -28,21 +34,24 @@ const ProgramDetail = () => {
       });
   }, [programId]);
 
-  // Loading State saat data sedang dijepret dari MySQL
+  // State Loading saat menjepret data dari MySQL
   if (loading) {
     return (
-      <div className="text-center py-12 text-slate-900">
-        <p className="text-lg animate-pulse">Memuat daftar latihan program...</p>
+      <div className="w-full min-h-[60vh] bg-transparent flex flex-col items-center justify-center text-center">
+        <p className="text-lg font-medium text-slate-900 animate-pulse">Memuat daftar latihan program...</p>
       </div>
     );
   }
 
-  // Error State jika data kosong
-  if (!programData) {
+  // Tampilan jika data relasi di database kamu kosong melompong
+  if (!programData || !programData.daftar_latihan || programData.daftar_latihan.length === 0) {
     return (
-      <div className="bg-transparent min-h-[60vh] flex flex-col items-center justify-center text-center">
-        <h2 className="text-3xl font-extrabold text-slate-900 mb-6">Program tidak ditemukan</h2>
-        <Link to="/workout" className="bg-[#1A2E35] text-white px-6 py-3 rounded-full font-medium">
+      <div className="bg-transparent min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4">Gagal Memuat Program Latihan</h2>
+        <p className="text-slate-600 mb-6 max-w-md">
+          Data pada tabel <code className="bg-zinc-200 px-1.5 py-0.5 rounded text-red-600">detail_program</code> kamu masih kosong atau ID gerakan tidak cocok. Pastikan data relasinya sudah di-POST lewat Postman.
+        </p>
+        <Link to="/workout" className="bg-[#1A2E35] text-white px-6 py-3 rounded-full font-medium shadow-md">
           Kembali ke Workout
         </Link>
       </div>
@@ -79,7 +88,7 @@ const ProgramDetail = () => {
             
             <p className="text-gray-400 text-xs font-bold tracking-widest mb-6 uppercase">DAFTAR LATIHAN:</p>
             <ul className="space-y-5">
-              {programData.daftar_latihan?.map((ex, index) => (
+              {programData.daftar_latihan.map((ex, index) => (
                 <li key={index} className="flex items-center gap-4">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                   <span className="text-zinc-300 text-lg">
@@ -92,9 +101,9 @@ const ProgramDetail = () => {
 
           {/* Sisi Kanan: Panel Aksi */}
           <div className="bg-white rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center shadow-lg w-full md:w-80 shrink-0">
-            {/* Mengoper data array gerakan dinamis database ke halaman ActiveWorkout */}
+            {/* Mengoper data array gerakan dinamis database ke rute asli ActiveWorkout temanmu */}
             <Link 
-              to="/workout/run" // Sesuaikan dengan rute halaman ActiveWorkout milik temanmu
+              to={`/workout/${goalId}/play`} 
               state={{ 
                 latihanList: programData.daftar_latihan, 
                 programName: programData.nama_program 
