@@ -8,7 +8,6 @@ const Tutorial = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true); // 4. State loading biar UX lebih halus
 
-  // 5. Ambil data dari Backend saat halaman pertama kali di-load
   useEffect(() => {
     fetch('http://localhost:5000/api/gerakan')
       .then((res) => {

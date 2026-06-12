@@ -6,41 +6,63 @@ const Workout = () => {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Ambil data program workout dari Backend kamu
+  // 1. Ambil data program utama
   useEffect(() => {
     fetch('http://localhost:5000/api/programs')
       .then((res) => res.json())
-      .then((data) => {
-        setPrograms(data);
+      .then(async (data) => {
+        if (Array.isArray(data)) {
+          // 2. Ambil detail total menit & gerakan secara real-time dari API yang kamu kirim tadi
+          const detailPromises = data.map(program => 
+            fetch(`http://localhost:5000/api/programs/${program.id}/gerakan`)
+              .then(res => {
+                if (!res.ok) throw new Error('Data masih kosong di DB');
+                return res.json();
+              })
+              .then(detail => {
+                return {
+                  ...program,
+                  durasi_total: detail.durasi_total || 0,
+                  jumlah_gerakan: detail.jumlah_gerakan || 0
+                };
+              })
+              .catch(() => {
+                // Jika di DB detail_program emang belum ada datanya, default ke angka basic biar gak error 404
+                return {
+                  ...program,
+                  durasi_total: 0,
+                  jumlah_gerakan: 0
+                };
+              })
+          );
+
+          const finalPrograms = await Promise.all(detailPromises);
+          setPrograms(finalPrograms);
+        }
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Gagal mengambil data program:", err);
+        console.error("Gagal sinkronisasi data program:", err);
         setLoading(false);
       });
   }, []);
 
-  // 2. Fungsi pembantu untuk menentukan ikon berdasarkan nama program di DB
   const renderIcon = (namaProgram) => {
+    if (!namaProgram) return <Zap className="w-7 h-7 md:w-10 md:h-10 text-yellow-400" strokeWidth={2.5} />;
     const name = namaProgram.toLowerCase();
-    if (name.includes('fat')) {
-      return <Flame className="w-7 h-7 md:w-10 md:h-10 text-red-500" strokeWidth={2.5} />;
-    } else if (name.includes('health')) {
-      return <Heart className="w-7 h-7 md:w-10 md:h-10 text-blue-500" strokeWidth={2.5} />;
-    } else {
-      return <Zap className="w-7 h-7 md:w-10 md:h-10 text-yellow-400" strokeWidth={2.5} />;
-    }
+    if (name.includes('fat')) return <Flame className="w-7 h-7 md:w-10 md:h-10 text-red-500" strokeWidth={2.5} />;
+    if (name.includes('health')) return <Heart className="w-7 h-7 md:w-10 md:h-10 text-blue-500" strokeWidth={2.5} />;
+    return <Zap className="w-7 h-7 md:w-10 md:h-10 text-yellow-400" strokeWidth={2.5} />;
   };
 
-  // 3. Fungsi pembantu membuat slug rute URL (Contoh: "Fat Loss" -> "fat-loss")
   const createSlug = (name) => {
-    return name.toLowerCase().replace(/\s+/g, '-');
+    return name ? name.toLowerCase().replace(/\s+/g, '-') : 'program';
   };
 
   if (loading) {
     return (
       <div className="text-center py-12 text-slate-900">
-        <p className="text-lg animate-pulse">Memuat pilihan target latihan...</p>
+        <p className="text-lg animate-pulse font-medium">Sinkronisasi durasi database...</p>
       </div>
     );
   }
@@ -51,11 +73,10 @@ const Workout = () => {
 
       <div className="flex flex-col gap-6">
         {programs.map((program) => (
-          // Link dinamis mengarahkan ke ID program atau slug teksnya
           <Link 
             key={program.id} 
             to={`/workout/${createSlug(program.nama_program)}`} 
-            state={{ programId: program.id }} // Trik passing data ID ke halaman berikutnya
+            state={{ programId: program.id }}
             className="block outline-none"
           >
             <div className="bg-[#1A2E35] text-white rounded-3xl p-6 md:p-10 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-300 cursor-pointer shadow-xl">
@@ -64,7 +85,8 @@ const Workout = () => {
               </div>
               <h2 className="text-2xl md:text-3xl font-bold mb-2 md:mb-3">{program.nama_program}</h2>
               <p className="text-gray-300 text-sm md:text-lg">{program.deskripsi}</p>
-              <span className="text-xs text-zinc-400 mt-4">
+              
+              <span className="text-xs text-zinc-400 mt-4 font-semibold tracking-wider">
                 {program.durasi_total} Menit • {program.jumlah_gerakan} Gerakan
               </span>
             </div>

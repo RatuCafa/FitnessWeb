@@ -4,27 +4,42 @@ import { Play, Pause, ChevronRight, Zap } from 'lucide-react';
 
 const ActiveWorkout = () => {
   const location = useLocation();
-  // Menangkap array bungkusan list gerakan dinamis dari DB
+  // Menangkap bungkusan data dinamis dari halaman pratinjau sebelumnya
   const { latihanList, programName } = location.state || { latihanList: [], programName: "Workout" };
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(45); // Durasi per gerakan default 45 detik
+  
+  // Mengambil item gerakan aktif berdasarkan index saat ini
+  const currentExercise = latihanList[currentIndex] || {};
+
+  // TIMER DINAMIS DATABASE: Ambil durasi MENIT dari DB lalu kalikan 60 agar menjadi DETIK untuk stopwatch
+  const [timeLeft, setTimeLeft] = useState((currentExercise.durasi * 60) || 60); 
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // Fungsi menggeser ke urutan gerakan berikutnya
+  // Efek Pengawas: Setiap kali index gerakan berubah, konversi ulang menit baru DB ke satuan detik
+  useEffect(() => {
+    if (currentExercise.durasi) {
+      setTimeLeft(currentExercise.durasi * 60); // Contoh: 1 Menit di DB dikalikan 60 = 60 Detik
+    } else {
+      setTimeLeft(60); // Cadangan 1 menit jika kolom durasi di DB kosong
+    }
+  }, [currentIndex, latihanList, currentExercise.durasi]);
+
+  // Fungsi untuk melompat ke urutan gerakan berikutnya
   const handleNext = () => {
     if (latihanList.length === 0) return;
+    
     if (currentIndex < latihanList.length - 1) {
       setCurrentIndex(prev => prev + 1);
-      setTimeLeft(45); // Reset ulang waktu ke 45 detik untuk gerakan selanjutnya
+      setIsRunning(false); // Jeda timer sebentar agar user siap-siap ke gerakan baru
     } else {
       setIsFinished(true);
       setIsRunning(false);
     }
   };
 
-  // Efek Mesin Hitung Mundur Waktu (Timer)
+  // Efek Utama Mesin Hitung Mundur (Timer Countdown)
   useEffect(() => {
     let interval = null;
     
@@ -33,18 +48,19 @@ const ActiveWorkout = () => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
     } else if (isRunning && timeLeft === 0) {
-      handleNext();
+      handleNext(); // Otomatis pindah gerakan kalau waktu habis
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeLeft, currentIndex, latihanList]);
+  }, [isRunning, timeLeft]);
 
   const toggleTimer = () => {
     setIsRunning(!isRunning);
   };
 
+  // Format tampilan angka jam murni detik ke format digital (Contoh: 60 -> "01:00", 59 -> "00:59")
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
@@ -53,23 +69,24 @@ const ActiveWorkout = () => {
     return `${paddedMinutes}:${paddedSeconds}`;
   };
 
-  // Antrean Pengaman jika data dari DB kosong melompong agar tidak Blank Putih
-  if (latihanList.length === 0) {
-    return (
-      <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
-        <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Program latihan kosong</h1>
-        <p className="text-slate-600 mb-6">Silakan masuk melalui menu pilihan Workout di halaman utama.</p>
-        <Link to="/workout" className="text-red-600 font-bold hover:underline">Kembali ke Workout</Link>
-      </div>
-    );
-  }
-
+  // Pemicu tombol simpan riwayat selesai ke lokal statistik
   const handleFinishWorkoutClick = () => {
     const current = parseInt(localStorage.getItem('completedWorkouts') || '0', 10);
     localStorage.setItem('completedWorkouts', current + 1);
   };
 
-  // Tampilan Screen Sukses Latihan (Finished State)
+  // Antrean Pengaman jika user tembak URL langsung tanpa bawa data array database
+  if (latihanList.length === 0) {
+    return (
+      <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
+        <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Program tidak ditemukan</h1>
+        <p className="text-slate-600 mb-6">Data gerakan kosong. Silakan masuk lewat halaman Workout utama.</p>
+        <Link to="/workout" className="text-red-600 font-bold hover:underline">Kembali ke Workout</Link>
+      </div>
+    );
+  }
+
+  // Tampilan Screen Sukses saat semua gerakan rampung di-eksekusi
   if (isFinished) {
     return (
       <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
@@ -100,9 +117,6 @@ const ActiveWorkout = () => {
     );
   }
 
-  // Mengambil item data gerakan aktif berdasarkan urutan index array DB saat ini
-  const currentExercise = latihanList[currentIndex];
-
   return (
     <div className="w-full min-h-full bg-transparent pt-8 flex flex-col">
       <div className="w-full mt-4">
@@ -118,7 +132,7 @@ const ActiveWorkout = () => {
         {/* Main Card Timer */}
         <div className="bg-[#1A2E35] rounded-[2rem] overflow-hidden max-w-3xl mx-auto shadow-2xl">
           
-          {/* Image Area Menampilkan link foto dari MySQL */}
+          {/* Image Area */}
           <div className="relative h-56 md:h-80 w-full bg-black">
             <img 
               src={currentExercise.thumbnail} 
@@ -129,11 +143,11 @@ const ActiveWorkout = () => {
                 e.target.src = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600';
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E35] via-[#1A2E35]/30 to-transparent flex flex-col justify-end p-8 pb-2">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E35] via-[#1A2E35]/40 to-transparent flex flex-col justify-end p-8 pb-2">
               <h2 className="text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-2xl md:text-4xl lg:text-5xl font-black mb-2 tracking-tight">
                 {currentExercise.nama_gerakan}
               </h2>
-              <p className="text-red-400 font-bold text-base md:text-lg">Target: 45 Detik</p>
+
             </div>
           </div>
 
@@ -152,7 +166,7 @@ const ActiveWorkout = () => {
                   <>
                     <Pause className="w-6 h-6 fill-current" />
                     JEDA
-                  </>
+                  </                  >
                 ) : (
                   <>
                     <Play className="w-6 h-6 fill-current" />
