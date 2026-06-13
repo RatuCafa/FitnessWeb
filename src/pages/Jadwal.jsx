@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle2, Plus, Trash, Activity, TrendingUp } from 'lucide-react';
 
-// KONVERSI AMAN FORMAT INFOMATIKA: Mengubah objek Date menjadi string YYYY-MM-DD lokal murni
+
 const toLocalYYYYMMDD = (dateObj) => {
   const target = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000);
   return target.toISOString().split('T')[0];
@@ -11,8 +11,8 @@ const generateCurrentWeek = () => {
   const daysArr = [];
   const date = new Date();
   const currentDay = date.getDay();
-  
-  // Mencari hari Senin sebagai awal minggu ini
+
+
   const diff = date.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
   const startOfWeek = new Date(date.setDate(diff));
 
@@ -21,11 +21,11 @@ const generateCurrentWeek = () => {
   for (let i = 0; i < 7; i++) {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
-    
+
     daysArr.push({
       day: dayNames[i],
       date: d.getDate().toString(),
-      fullDateStr: toLocalYYYYMMDD(d) // Menjamin string murni YYYY-MM-DD aman dari bug indeks bulan
+      fullDateStr: toLocalYYYYMMDD(d)
     });
   }
   return daysArr;
@@ -37,16 +37,14 @@ const Jadwal = () => {
   const currentMonthOnly = new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(today);
 
   const [days] = useState(generateCurrentWeek());
-  
-  // Inisialisasi awal langsung disamakan dengan format fungsi toLocalYYYYMMDD
+
   const [selectedDate, setSelectedDate] = useState(toLocalYYYYMMDD(today));
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [scheduledWorkouts, setScheduledWorkouts] = useState([]); 
-  const [modalPrograms, setModalPrograms] = useState([]); 
+  const [scheduledWorkouts, setScheduledWorkouts] = useState([]);
+  const [modalPrograms, setModalPrograms] = useState([]);
   const [weeklyStats, setWeeklyStats] = useState({ selesaiMingguIni: 0, terjadwalMingguIni: 0 });
 
-  // 1. Mengambil data jadwal latihan berdasarkan parameter tanggal YYYY-MM-DD
   const fetchJadwalByTanggal = (tanggal) => {
     console.log("Menembak API Jadwal untuk tanggal:", tanggal);
     fetch(`http://localhost:5000/api/jadwal/${tanggal}`)
@@ -63,11 +61,10 @@ const Jadwal = () => {
       })
       .catch(err => {
         console.error("Gagal mengambil jadwal:", err);
-        setScheduledWorkouts([]); 
+        setScheduledWorkouts([]);
       });
   };
 
-  // 2. Fungsi mengambil data statistik mingguan terbaru dari backend
   const fetchWeeklyStats = () => {
     fetch('http://localhost:5000/api/dashboard/stats')
       .then(res => res.json())
@@ -97,25 +94,23 @@ const Jadwal = () => {
     fetchWeeklyStats();
   }, [scheduledWorkouts]);
 
-  // 3. Fungsi mengubah status selesaian latihan (is_done)
   const handleToggleComplete = (id, currentStatus) => {
     const nextStatus = currentStatus === 1 ? 0 : 1;
-    
+
     fetch(`http://localhost:5000/api/jadwal/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_completed: nextStatus })
     })
-    .then(res => res.json())
-    .then(() => {
-      setScheduledWorkouts(prev => prev.map(w => 
-        w.id === id ? { ...w, is_done: nextStatus } : w
-      ));
-    })
-    .catch(err => console.error("Gagal mengubah status tugas:", err));
+      .then(res => res.json())
+      .then(() => {
+        setScheduledWorkouts(prev => prev.map(w =>
+          w.id === id ? { ...w, is_done: nextStatus } : w
+        ));
+      })
+      .catch(err => console.error("Gagal mengubah status tugas:", err));
   };
 
-  // 4. Fungsi menghapus jadwal dari database
   const handleDeleteWorkout = (id) => {
     fetch(`http://localhost:5000/api/jadwal/${id}`, { method: 'DELETE' })
       .then(res => res.json())
@@ -125,33 +120,32 @@ const Jadwal = () => {
       .catch(err => console.error("Gagal menghapus item jadwal:", err));
   };
 
-  // 5. Fungsi menambahkan jadwal baru lewat modal popup
   const handleAddWorkout = (programId) => {
     fetch('http://localhost:5000/api/jadwal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tanggal: selectedDate, program_id: programId })
     })
-    .then(res => res.json())
-    .then((response) => {
-      const programAsli = modalPrograms.find(prog => prog.id === programId);
-      
-      if (programAsli) {
-        const jadwalBaru = {
-          id: response.id, 
-          is_done: 0, 
-          nama_program: programAsli.nama_program,
-          durasi_total: programAsli.durasi_total,
-          program_id: programId,
-          tanggal: selectedDate
-        };
-        
-        setScheduledWorkouts(prev => [...prev, jadwalBaru]);
-      }
-      
-      setIsModalOpen(false);
-    })
-    .catch(err => console.error("Gagal menambahkan jadwal:", err));
+      .then(res => res.json())
+      .then((response) => {
+        const programAsli = modalPrograms.find(prog => prog.id === programId);
+
+        if (programAsli) {
+          const jadwalBaru = {
+            id: response.id,
+            is_done: 0,
+            nama_program: programAsli.nama_program,
+            durasi_total: programAsli.durasi_total,
+            program_id: programId,
+            tanggal: selectedDate
+          };
+
+          setScheduledWorkouts(prev => [...prev, jadwalBaru]);
+        }
+
+        setIsModalOpen(false);
+      })
+      .catch(err => console.error("Gagal menambahkan jadwal:", err));
   };
 
   const getDisplayDayNum = (dateStr) => parseInt(dateStr.split('-')[2], 10).toString();
