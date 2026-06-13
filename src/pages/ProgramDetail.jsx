@@ -4,20 +4,18 @@ import { ArrowLeft, Play } from 'lucide-react';
 
 const ProgramDetail = () => {
   const location = useLocation();
-  const { goalId } = useParams(); // Mengambil slug URL bawaan temanmu (misal: 'muscle-gain')
+  const { goalId } = useParams();
 
-  // LOGIKA DETEKSI ID: Ambil dari state, jika kosong konversi dari slug URL params
   let programId = location.state?.programId;
   if (!programId) {
     if (goalId === 'fat-loss' || goalId === '1') programId = 1;
     else if (goalId === 'general-health' || goalId === '2') programId = 2;
-    else programId = 3; // Default ke Muscle Gain (ID: 3)
+    else programId = 3;
   }
 
   const [programData, setProgramData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mengambil daftar gerakan berdasarkan ID program dari Backend
   useEffect(() => {
     fetch(`http://localhost:5000/api/programs/${programId}/gerakan`)
       .then((res) => {
@@ -34,7 +32,6 @@ const ProgramDetail = () => {
       });
   }, [programId]);
 
-  // State Loading saat menjepret data dari MySQL
   if (loading) {
     return (
       <div className="w-full min-h-[60vh] bg-transparent flex flex-col items-center justify-center text-center">
@@ -43,7 +40,6 @@ const ProgramDetail = () => {
     );
   }
 
-  // Tampilan jika data relasi di database kamu kosong melompong
   if (!programData || !programData.daftar_latihan || programData.daftar_latihan.length === 0) {
     return (
       <div className="bg-transparent min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
@@ -60,7 +56,6 @@ const ProgramDetail = () => {
 
   return (
     <div className="bg-transparent text-white">
-      {/* Back Button */}
       <Link
         to="/workout"
         className="inline-flex items-center gap-2 bg-[#1A2E35] text-white px-5 py-2.5 rounded-full font-medium hover:bg-[#122227] transition-colors mb-10 shadow-md"
@@ -70,16 +65,13 @@ const ProgramDetail = () => {
       </Link>
 
       <div>
-        {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight">Program Tersedia</h1>
           <p className="text-slate-600 text-lg font-medium">Pilih program yang sesuai dengan jadwalmu.</p>
         </div>
 
-        {/* Program Card */}
         <div className="bg-[#1A2E35] rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 lg:p-12 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-6 md:gap-10">
 
-          {/* Sisi Kiri: Info Program Dinamis dari DB */}
           <div className="flex-1 text-white w-full">
             <h2 className="text-2xl md:text-4xl font-bold mb-2">{programData.nama_program}</h2>
             <p className="text-gray-400 text-sm font-bold tracking-widest mb-10 uppercase">
@@ -92,7 +84,6 @@ const ProgramDetail = () => {
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                   <span className="text-zinc-300 text-lg">
                     <span className="font-semibold text-white">{ex.nama_gerakan}</span>{" "}
-                    {/* Mengambil durasi dinamis gerakan dari database */}
                     <span className="text-zinc-400">({ex.durasi} Menit)</span>
                   </span>
                 </li>
@@ -100,9 +91,7 @@ const ProgramDetail = () => {
             </ul>
           </div>
 
-          {/* Sisi Kanan: Panel Aksi */}
           <div className="bg-white rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center shadow-lg w-full md:w-80 shrink-0">
-            {/* Mengoper data array gerakan dinamis database ke rute asli ActiveWorkout temanmu */}
             <Link
               to={`/workout/${goalId}/play`}
               state={{

@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react'; // 1. Tambahkan useEffect di sini
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import TutorialCard from '../components/TutorialCard';
-// import { movementData } from '../data/movements'; // 2. Kita matikan data statis ini karena mau pakai DB
 
 const Tutorial = () => {
-  const [movements, setMovements] = useState([]); // 3. State penampung data dari database
+  const [movements, setMovements] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true); // 4. State loading biar UX lebih halus
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/gerakan')
@@ -17,7 +16,7 @@ const Tutorial = () => {
         return res.json();
       })
       .then((data) => {
-        setMovements(data); // Simpan hasil query SELECT * FROM gerakan ke state
+        setMovements(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -26,7 +25,6 @@ const Tutorial = () => {
       });
   }, []);
 
-  // 6. Logika filter disesuaikan dengan nama kolom database kamu (nama_gerakan & target_otot)
   const filteredMovements = movements.filter((item) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -37,7 +35,6 @@ const Tutorial = () => {
 
   return (
     <div>
-      {/* Header Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-black mb-2">Kamus Gerakan</h1>
         <p className="text-black font-medium mb-6">Cari dan pelajari teknik gerakan yang benar.</p>
@@ -54,14 +51,12 @@ const Tutorial = () => {
         </div>
       </div>
 
-      {/* 7. Tampilkan status Loading jika data masih dijepret dari API */}
       {loading ? (
         <div className="text-center py-12">
           <p className="text-zinc-500 text-lg animate-pulse">Menghubungkan ke database...</p>
         </div>
       ) : (
         <>
-          {/* Grid of Tutorial Cards */}
           {filteredMovements.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {filteredMovements.map((item) => (

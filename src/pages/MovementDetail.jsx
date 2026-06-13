@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-// PASTIKAN PLAYCIRCLE ADA DI SINI
 import { ArrowLeft, PlayCircle, AlertTriangle, Lightbulb, Check } from 'lucide-react';
 
 const MovementDetail = () => {
   const { id } = useParams(); 
   const [movement, setMovement] = useState(null); 
   const [loading, setLoading] = useState(true);
-  // STATE BARU UNTUK PLAY VIDEO
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
@@ -52,14 +50,12 @@ const MovementDetail = () => {
 
   return (
     <div className="bg-transparent text-white">
-      {/* Navigation */}
       <Link to="/tutorial" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1A2E35] hover:bg-[#1A2E35]/80 text-white rounded-full transition-all text-sm font-medium mb-6">
         <ArrowLeft className="w-5 h-5" />
         Kembali ke Daftar
       </Link>
 
       <div>
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 uppercase tracking-wide text-slate-900">
             {movement.nama_gerakan}
@@ -68,8 +64,6 @@ const MovementDetail = () => {
             {movement.target_otot}
           </span>
         </div>
-
-        {/* Video / Thumbnail Section */}
         <div className="relative aspect-[16/9] rounded-2xl md:rounded-3xl overflow-hidden mb-8 md:mb-12 shadow-2xl group bg-black">
           {!isPlaying ? (
             <div className="w-full h-full relative cursor-pointer" onClick={() => setIsPlaying(true)}>
@@ -100,10 +94,7 @@ const MovementDetail = () => {
             ></iframe>
           )}
         </div>
-
-        {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-          {/* Kesalahan Umum */}
           <div className="bg-[#1A2E35] rounded-2xl md:rounded-3xl p-5 md:p-8 text-white shadow-xl relative overflow-hidden group h-full">
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
             
@@ -123,8 +114,6 @@ const MovementDetail = () => {
               ))}
             </ul>
           </div>
-
-          {/* Tips Gerakan */}
           <div className="bg-[#1A2E35] rounded-2xl md:rounded-3xl p-5 md:p-8 text-white shadow-xl relative overflow-hidden group h-full">
             <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
             

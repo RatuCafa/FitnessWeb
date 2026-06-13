@@ -6,13 +6,11 @@ const Workout = () => {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Ambil data program utama
   useEffect(() => {
     fetch('http://localhost:5000/api/programs')
       .then((res) => res.json())
       .then(async (data) => {
         if (Array.isArray(data)) {
-          // 2. Ambil detail total menit & gerakan secara real-time dari API yang kamu kirim tadi
           const detailPromises = data.map(program => 
             fetch(`http://localhost:5000/api/programs/${program.id}/gerakan`)
               .then(res => {
@@ -27,7 +25,6 @@ const Workout = () => {
                 };
               })
               .catch(() => {
-                // Jika di DB detail_program emang belum ada datanya, default ke angka basic biar gak error 404
                 return {
                   ...program,
                   durasi_total: 0,
