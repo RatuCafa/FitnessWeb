@@ -5,14 +5,13 @@ import { Play, Trophy, Clock } from 'lucide-react';
 import heroImg from '../assets/hero.jpg';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({ 
-    totalTime: '00:00', 
-    totalSeconds: 0, 
-    selesaiMingguIni: 0,      
-    terjadwalMingguIni: 0     
+  const [stats, setStats] = useState({
+    totalTime: '00:00',
+    totalSeconds: 0,
+    selesaiMingguIni: 0,
+    terjadwalMingguIni: 0
   });
 
-  // 1. Ambil data dari backend (versi apa adanya yang aktif di servermu saat ini)
   useEffect(() => {
     fetch('http://localhost:5000/api/dashboard/stats')
       .then((res) => {
@@ -26,24 +25,17 @@ const Dashboard = () => {
       .catch((err) => console.error("Koneksi API Dashboard Error:", err));
   }, []);
 
-  /* 2. MEMBEDAH DATA SECARA PAKSA DI FRONTEND (Membongkar angka 52 dari backend)
-    - Di console terbukti totalSeconds bernilai "52" (tipe string atau angka).
-    - Kita ubah "52" ini menjadi angka murni untuk jumlah workout yang SELESAI DICENTANG.
-  */
-  const jumlahWorkoutDicentang = Number(stats.totalSeconds) || 0; 
-  
-  // Karena di jadwal kamu total seluruh latihan hari ini adalah 52 Menit, kita set TARGET HARI INI = 52.
-  const targetMenitHariIni = 52; 
 
-  // 3. Format Teks di Tengah agar rapi berformat Menit:Detik (Contoh: 1 selesai -> "01:00", 2 selesai -> "02:00")
+  const jumlahWorkoutDicentang = Number(stats.totalSeconds) || 0;
+
+  const targetMenitHariIni = 52;
+
   const formattedTime = `${String(jumlahWorkoutDicentang).padStart(2, '0')}:00`;
 
-  // 4. Kalkulasi Progress Lingkaran Merah (Time) -> (Jumlah Dicentang / 52)
   const circleCircumference = 251.2;
-  const timeRatio = targetMenitHariIni > 0 ? Math.min(jumlahWorkoutDicentang / targetMenitHariIni, 1) : 0; 
+  const timeRatio = targetMenitHariIni > 0 ? Math.min(jumlahWorkoutDicentang / targetMenitHariIni, 1) : 0;
   const timeOffset = circleCircumference - (timeRatio * circleCircumference);
 
-  // 5. Kalkulasi Progress Lingkaran Hijau (Exercises)
   const taskRatio = Math.min(stats.selesaiMingguIni / (stats.terjadwalMingguIni || 1), 1);
   const taskOffset = circleCircumference - (taskRatio * circleCircumference);
 
@@ -83,7 +75,7 @@ const Dashboard = () => {
 
       {/* Activity Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-[450px]">
-        
+
         {/* Sisi Kiri: Time Card */}
         <div className="bg-[#1A2E35] p-5 md:p-8 rounded-3xl flex flex-col justify-between h-full min-h-[300px]">
           <div className="flex justify-between items-start">
@@ -95,16 +87,16 @@ const Dashboard = () => {
           <div className="relative flex justify-center items-center flex-1 my-4">
             <svg className="w-40 h-40 md:w-48 md:h-48 -rotate-90 origin-center drop-shadow-lg" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" fill="transparent" strokeWidth="12" className="stroke-gray-700" />
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="40" 
-                fill="transparent" 
-                strokeWidth="12" 
-                className="stroke-red-500 transition-all duration-500" 
-                strokeDasharray={circleCircumference} 
-                strokeDashoffset={timeOffset} 
-                strokeLinecap="round" 
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="transparent"
+                strokeWidth="12"
+                className="stroke-red-500 transition-all duration-500"
+                strokeDasharray={circleCircumference}
+                strokeDashoffset={timeOffset}
+                strokeLinecap="round"
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
@@ -124,16 +116,16 @@ const Dashboard = () => {
           <div className="relative flex justify-center items-center flex-1 my-4">
             <svg className="w-40 h-40 md:w-48 md:h-48 -rotate-90 origin-center drop-shadow-lg" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" fill="transparent" strokeWidth="12" className="stroke-gray-700" />
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="40" 
-                fill="transparent" 
-                strokeWidth="12" 
-                className="stroke-emerald-500 transition-all duration-500" 
-                strokeDasharray={circleCircumference} 
-                strokeDashoffset={taskOffset} 
-                strokeLinecap="round" 
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="transparent"
+                strokeWidth="12"
+                className="stroke-emerald-500 transition-all duration-500"
+                strokeDasharray={circleCircumference}
+                strokeDashoffset={taskOffset}
+                strokeLinecap="round"
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center">

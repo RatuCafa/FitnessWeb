@@ -4,53 +4,48 @@ import { Play, Pause, ChevronRight, Zap } from 'lucide-react';
 
 const ActiveWorkout = () => {
   const location = useLocation();
-  // Menangkap bungkusan data dinamis dari halaman pratinjau sebelumnya
   const { latihanList, programName } = location.state || { latihanList: [], programName: "Workout" };
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  
-  // Mengambil item gerakan aktif berdasarkan index saat ini
+
   const currentExercise = latihanList[currentIndex] || {};
 
-  // TIMER DINAMIS DATABASE: Ambil durasi MENIT dari DB lalu kalikan 60 agar menjadi DETIK untuk stopwatch
-  const [timeLeft, setTimeLeft] = useState((currentExercise.durasi * 60) || 60); 
+  const [timeLeft, setTimeLeft] = useState((currentExercise.durasi * 60) || 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // Efek Pengawas: Setiap kali index gerakan berubah, konversi ulang menit baru DB ke satuan detik
   useEffect(() => {
     if (currentExercise.durasi) {
-      setTimeLeft(currentExercise.durasi * 60); // Contoh: 1 Menit di DB dikalikan 60 = 60 Detik
+      setTimeLeft(currentExercise.durasi * 60);
     } else {
-      setTimeLeft(60); // Cadangan 1 menit jika kolom durasi di DB kosong
+      setTimeLeft(60);
     }
   }, [currentIndex, latihanList, currentExercise.durasi]);
 
-  // Fungsi untuk melompat ke urutan gerakan berikutnya
   const handleNext = () => {
     if (latihanList.length === 0) return;
-    
+
     if (currentIndex < latihanList.length - 1) {
       setCurrentIndex(prev => prev + 1);
-      setIsRunning(false); // Jeda timer sebentar agar user siap-siap ke gerakan baru
+      setIsRunning(false);
     } else {
       setIsFinished(true);
       setIsRunning(false);
     }
   };
 
-  // Efek Utama Mesin Hitung Mundur (Timer Countdown)
+
   useEffect(() => {
     let interval = null;
-    
+
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
     } else if (isRunning && timeLeft === 0) {
-      handleNext(); // Otomatis pindah gerakan kalau waktu habis
+      handleNext();
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -60,7 +55,6 @@ const ActiveWorkout = () => {
     setIsRunning(!isRunning);
   };
 
-  // Format tampilan angka jam murni detik ke format digital (Contoh: 60 -> "01:00", 59 -> "00:59")
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
@@ -69,13 +63,11 @@ const ActiveWorkout = () => {
     return `${paddedMinutes}:${paddedSeconds}`;
   };
 
-  // Pemicu tombol simpan riwayat selesai ke lokal statistik
   const handleFinishWorkoutClick = () => {
     const current = parseInt(localStorage.getItem('completedWorkouts') || '0', 10);
     localStorage.setItem('completedWorkouts', current + 1);
   };
 
-  // Antrean Pengaman jika user tembak URL langsung tanpa bawa data array database
   if (latihanList.length === 0) {
     return (
       <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
@@ -86,7 +78,6 @@ const ActiveWorkout = () => {
     );
   }
 
-  // Tampilan Screen Sukses saat semua gerakan rampung di-eksekusi
   if (isFinished) {
     return (
       <div className="w-full min-h-[70vh] bg-transparent flex flex-col items-center justify-center text-center">
@@ -98,15 +89,15 @@ const ActiveWorkout = () => {
           Luar biasa! Kamu telah menyelesaikan program <span className="font-bold text-slate-900">{programName}</span>. Jangan lupa isi jadwalmu dan cek kemajuan minggu ini.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Link 
-            to="/jadwal" 
+          <Link
+            to="/jadwal"
             onClick={handleFinishWorkoutClick}
             className="bg-red-600 text-white font-bold text-sm tracking-wider px-8 py-3.5 rounded-full shadow-md hover:bg-red-700 transition-colors uppercase"
           >
             CEK JADWAL
           </Link>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             onClick={handleFinishWorkoutClick}
             className="bg-white border-2 border-zinc-100 text-zinc-600 font-bold text-sm tracking-wider px-8 py-3.5 rounded-full hover:bg-zinc-50 hover:border-zinc-200 transition-colors uppercase"
           >
@@ -120,7 +111,7 @@ const ActiveWorkout = () => {
   return (
     <div className="w-full min-h-full bg-transparent pt-8 flex flex-col">
       <div className="w-full mt-4">
-        
+
         {/* Header Pill Progress */}
         <div className="bg-[#1A2E35] text-white px-6 py-4 rounded-full flex justify-between items-center max-w-3xl mx-auto mb-8 shadow-md">
           <span className="font-bold text-sm tracking-wide">{programName}</span>
@@ -131,12 +122,12 @@ const ActiveWorkout = () => {
 
         {/* Main Card Timer */}
         <div className="bg-[#1A2E35] rounded-[2rem] overflow-hidden max-w-3xl mx-auto shadow-2xl">
-          
+
           {/* Image Area */}
           <div className="relative h-56 md:h-80 w-full bg-black">
-            <img 
-              src={currentExercise.thumbnail} 
-              alt={currentExercise.nama_gerakan} 
+            <img
+              src={currentExercise.thumbnail}
+              alt={currentExercise.nama_gerakan}
               className="w-full h-full object-cover opacity-90"
               onError={(e) => {
                 e.target.onerror = null;
@@ -158,7 +149,7 @@ const ActiveWorkout = () => {
             </h3>
 
             <div className="flex items-center gap-3 md:gap-4 mt-5 md:mt-8 px-2 md:px-4">
-              <button 
+              <button
                 onClick={toggleTimer}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-base md:text-lg py-3 md:py-4 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 tracking-wider active:scale-98"
               >
@@ -174,8 +165,8 @@ const ActiveWorkout = () => {
                   </>
                 )}
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleNext}
                 className="w-12 h-12 md:w-16 md:h-16 bg-white text-zinc-900 rounded-full shadow-lg hover:bg-zinc-100 transition-colors flex items-center justify-center shrink-0 active:scale-95"
               >
